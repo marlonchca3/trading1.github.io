@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Juego de Patrones de Velas</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #fff;
+  text-align: center;
+}
+.container {
+  max-width: 700px;
+  margin: auto;
+}
+img {
+  width: 100%;
+  border-radius: 10px;
+  margin: 15px 0;
+}
+button {
+  margin: 5px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+}
+button:hover {
+  background: #1d4ed8;
+}
+button:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+#timer {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fbbf24;
+  margin: 15px 0;
+}
+#pregunta {
+  font-size: 20px;
+  margin: 20px 0;
+  font-weight: bold;
+  min-height: 30px;
+}
+#resultado {
+  margin-top: 10px;
+  font-size: 18px;
+  min-height: 25px;
+}
+.opciones-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+#reinicioContainer {
+  margin-top: 30px;
+  position: relative;
+  z-index: 100;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>🎯 Juego de Patrones de Velas</h1>
+  <p>Puntaje: <span id="score">0</span> / 50 | Pregunta: <span id="preguntaActual">1</span> / 100</p>
+
+  <div id="timer">Tiempo: 10s</div>
+
+  <img id="imagen" src="" alt="patrón" style="max-height: 300px;">
+
+  <div id="pregunta"></div>
+
+  <div id="opciones" class="opciones-container"></div>
+
+  <p id="resultado"></p>
+  
+  <div id="reinicioContainer" style="display: none;">
+    <button id="reiniciarBtn" onclick="reiniciarJuego()" style="background: #10b981; font-size: 18px; padding: 12px 20px; margin-top: 20px;">🔄 Reiniciar Juego</button>
+  </div>
+</div>
+
+<script>
+const patrones = [
+  
+  {
+    img: "fotos/1.jpg",
+    pregunta: "¿Qué patrón es el 1 ?",
+    correcto: "Tijeras superiores",
+    opciones: ["Cielo negro cubierto", "Hombre colgado", "Tijeras superiores"]
+  },
+
+  {
+    img: "fotos/2.jpg",
+    pregunta: "¿Qué patron es el 1 ?",
+    correcto: "Tijeras superiores",
+    opciones: ["Cielo negro cubierto", "Tijeras superiores", "Triángulo"]
+  },
+
+  {
+    img: "fotos/3.jpg",
+    pregunta: "¿Qué patrón es el 1 ?",
+    correcto: "Tijeras superiores",
+    opciones: ["Tijeras superiores", "Doble Techo", "Envolvente alcista"]
+  },
+
+  {
+    img: "fotos/4.jpg",
+    pregunta: "¿Qué patrón es el 1?",
+    correcto: "Lineas de cinturon bajista",
+    opciones: ["Cielo negro cubierto", "Envolvente alcista", "Lineas de cinturon bajista"]
+  },
+
+  {
+    img: "fotos/5.jpg",
+    pregunta: "¿Qué patrónes es el 1 ?",
+    correcto: "Lineas de cinturon alcista",
+    opciones: ["Cielo negro cubierto", "Lineas de cinturon alcista", "Envolventes bajistas"]
+  },
+
+  
+];
+
+let indice = 0;
+let score = 0;
+let preguntasHechas = 0;
+let tiempoRestante = 0;
+let timerInterval = null;
+let patronActual = null;
+
+function obtenerPatronAleatorio() {
+  return patrones[Math.floor(Math.random() * patrones.length)];
+}
+
+function iniciarTemporizador() {
+  tiempoRestante = 10;
+  actualizarTemporizador();
+  
+  timerInterval = setInterval(() => {
+    tiempoRestante--;
+    actualizarTemporizador();
+    
+    if (tiempoRestante <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById("resultado").textContent = "⏰ Tiempo agotado. Era: " + patronActual.correcto;
+      deshabilitarBotones();
+      preguntasHechas++;
+      
+      if (preguntasHechas < 100) {
+        setTimeout(cargarPatron, 2000);
+      } else {
+        mostrarFinal();
+      }
+    }
+  }, 1000);
+}
+
+function actualizarTemporizador() {
+  document.getElementById("timer").textContent = `Tiempo: ${tiempoRestante}s`;
+  if (tiempoRestante <= 3) {
+    document.getElementById("timer").style.color = "#ef4444";
+  } else {
+    document.getElementById("timer").style.color = "#fbbf24";
+  }
+}
+
+function deshabilitarBotones() {
+  const botones = document.querySelectorAll(".opciones-container button");
+  botones.forEach(btn => btn.disabled = true);
+}
+
+function cargarPatron() {
+  clearInterval(timerInterval);
+  
+  const p = obtenerPatronAleatorio();
+  patronActual = p;
+  document.getElementById("imagen").src = p.img;
+  document.getElementById("pregunta").textContent = p.pregunta;
+  document.getElementById("preguntaActual").textContent = preguntasHechas + 1;
+  const opcionesDiv = document.getElementById("opciones");
+  opcionesDiv.innerHTML = "";
+  document.getElementById("resultado").textContent = "";
+
+  p.opciones.forEach(op => {
+    const btn = document.createElement("button");
+    btn.textContent = op;
+    btn.onclick = () => verificar(op);
+    btn.disabled = false;
+    opcionesDiv.appendChild(btn);
+  });
+  
+  iniciarTemporizador();
+}
+
+function verificar(respuesta) {
+  clearInterval(timerInterval);
+  deshabilitarBotones();
+  
+  const resultado = document.getElementById("resultado");
+
+  if (respuesta === patronActual.correcto) {
+    resultado.textContent = "✅ Correcto!";
+    score++;
+    document.getElementById("score").textContent = score;
+  } else {
+    resultado.textContent = "❌ Incorrecto. Era: " + patronActual.correcto;
+  }
+
+  preguntasHechas++;
+  
+  if (preguntasHechas < 100) {
+    setTimeout(cargarPatron, 2000);
+  } else {
+    mostrarFinal();
+  }
+}
+
+function mostrarFinal() {
+  setTimeout(() => {
+    document.getElementById("resultado").textContent = `🎉 ¡Juego terminado! Puntaje final: ${score}/100`;
+    document.getElementById("reinicioContainer").style.display = "block";
+    document.getElementById("imagen").style.display = "none";
+    document.getElementById("pregunta").style.display = "none";
+    document.getElementById("opciones").style.display = "none";
+    document.getElementById("timer").style.display = "none";
+  }, 500);
+}
+
+function reiniciarJuego() {
+  indice = 0;
+  score = 0;
+  preguntasHechas = 0;
+  tiempoRestante = 0;
+  clearInterval(timerInterval);
+  
+  document.getElementById("score").textContent = "0";
+  document.getElementById("preguntaActual").textContent = "1";
+  document.getElementById("resultado").textContent = "";
+  document.getElementById("imagen").style.display = "block";
+  document.getElementById("pregunta").style.display = "block";
+  document.getElementById("opciones").style.display = "flex";
+  document.getElementById("timer").style.display = "block";
+  document.getElementById("reinicioContainer").style.display = "none";
+  
+  cargarPatron();
+}
+
+cargarPatron();
+</script>
+</body>
+</html>
